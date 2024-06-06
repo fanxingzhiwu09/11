@@ -1,0 +1,99 @@
+// ==UserScript==
+// @name         ycy修改UA标识及创建全屏按钮、锁定屏幕
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  修改UA标识,清晰度提升，可快进
+// @author       ycy
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=163.com
+// @run-at       document-start
+// @match        https://avg.163.com/*
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    /* 修改userAgent */
+    var ycy = 'Android/Mozilla/5.0 (Linux; U; Android 13.0; zh-cn; HTC_Wildfire_A3333 Build/FRG83D) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1';
+    Object.defineProperty(navigator, 'userAgent', { value: ycy, writable: false });
+
+    /* 创建元素实现全屏效果 */
+    var fsButton = document.createElement('button');
+    fsButton.innerHTML = '点击全屏';
+    var isFullScreen = false; /* 跟踪全屏状态 */
+
+    
+    fsButton.style.position = 'fixed';
+    fsButton.style.bottom = '10px'; 
+    fsButton.style.left = '10px'; 
+    fsButton.style.zIndex = '9999'; 
+    fsButton.style.width = '60px';
+    fsButton.style.height = '60px'; 
+    fsButton.style.borderRadius = '50%'; 
+    fsButton.style.color = '#fff';
+    fsButton.style.fontSize = '25px'; 
+    fsButton.style.cursor = 'pointer'; 
+    fsButton.style.background = '#4CAF50';
+
+    
+    fsButton.addEventListener('click', function () {
+        if (!isFullScreen) {
+            enterFullScreen(); 
+        }
+    });
+
+    /* 将按钮添加到iframe */
+    var iframeElement = window.frameElement;
+    if (iframeElement) {
+        var iframeDocument = iframeElement.contentDocument;
+        iframeDocument.body.appendChild(fsButton);
+    }
+
+    /* 监听全屏状态变化 */
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+
+    /* 进入全屏 */
+    function enterFullScreen() {
+        if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+            document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        }
+
+        /* 锁定屏幕方向为横屏 */
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').then(function () {
+                /* 锁定成功 */
+            }).catch(function () {
+                /* 锁定失败 */
+            });
+        }
+
+        /* 按钮样式 */
+        isFullScreen = true;
+        fsButton.style.display = 'none';
+    }
+
+    /* 处理全屏状态变化事件 */
+    function handleFullscreenChange() {
+        if (isDocumentFullscreen()) {
+            isFullScreen = true;
+            fsButton.style.display = 'none';
+        } else {
+            isFullScreen = false;
+            fsButton.style.display = 'block';
+        }
+    }
+
+    /* 检查文档是否处于全屏状态 */
+    function isDocumentFullscreen() {
+        return (
+            document.fullscreenElement ||
+            document.mozFullScreenElement ||
+            document.webkitFullscreenElement
+        );
+    }
+})();
